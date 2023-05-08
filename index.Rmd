@@ -1,5 +1,5 @@
 ---
-title: "A tutorial for Autoencoder from the View of Demonsion Reduction"
+title: "Autoencoders for Demonsion Reduction"
 author: "Zhejia Dong & Tabib Chowdhury"
 date: "2023-05-04"
 header-includes:
