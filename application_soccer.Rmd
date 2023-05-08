@@ -1,0 +1,179 @@
+---
+title: "application soccer"
+author: "Zhejia Dong"
+date: "2023-05-05"
+output: html_document
+---
+
+```{r setup, include=FALSE,echo=TRUE}
+knitr::opts_chunk$set(message = F)
+knitr::opts_chunk$set(warning = F)
+knitr::opts_chunk$set(echo = FALSE, eval = TRUE,cache=TRUE,warning = FALSE,message = FALSE)
+knitr::opts_chunk$set(fig.height = 3)
+knitr::opts_chunk$set(fig.width = 4.5)
+knitr::opts_chunk$set(fig.align="center")
+```
+
+```{r library, include=FALSE,echo=TRUE}
+library(tidyverse)
+library(tidyr)
+library(lubridate)
+library(kableExtra)
+library(knitr)
+library(reshape2)
+library(data.table)
+library(ggplot2)
+library(ggthemes)
+library(tensorflow)
+library(keras)
+library(tfdatasets)
+library(ggfortify)
+library(plotly)
+```
+
+```{r,eval=FALSE}
+df <- read.csv("data/players_fifa23.csv")
+df.18 <- read.csv("data/CompleteDataset.csv")
+```
+
+
+```{r,eval=FALSE}
+# aggregate fwd, def, mid, gk data
+#  FWD (forward): all position in front, ST, LW, LF, CF, RF, RW
+# MID (Midfilder) all position in mid filed, CAM, LM, CM, RM, CDM
+# DEF (defense ) all position for defense, LWB, RWB, LB, CB, RB
+# GK (Goal keeper) just goal keeper
+df.use <- df %>% mutate(BP = case_when(BestPosition %in% c("ST", "LW", "RW", "LF", "CF", "RF")~ "FWD",
+                             BestPosition %in% c("CAM", "LM", "CM", "RM", "CDM")~ "MID",
+                             BestPosition %in% c("LWB","RWB","RB", "LB", "CB")~ "DEF",
+                             BestPosition %in% c("GK")~ "GK")) %>%
+  mutate(AttackingWorkRate = case_when(AttackingWorkRate == "High" ~ 3,
+                                       AttackingWorkRate == "Medium" ~ 2,
+                                       AttackingWorkRate == "Low" ~ 1),
+         DefensiveWorkRate = case_when(DefensiveWorkRate == "High" ~ 3,
+                                       DefensiveWorkRate == "Medium" ~ 2,
+                                       DefensiveWorkRate == "Low" ~ 1))
+skill_measures <- c("WeakFoot", "SkillMoves", "AttackingWorkRate", "DefensiveWorkRate",
+                    "PaceTotal", "ShootingTotal", "PassingTotal", "DribblingTotal","DefendingTotal",
+                    "PhysicalityTotal", "Crossing", "Finishing", "HeadingAccuracy",
+                    "ShortPassing", "Dribbling", "Curve",  "FKAccuracy", "BallControl",
+                    "Acceleration", "SprintSpeed", "Agility", "Reactions", "Balance", "ShotPower", "Jumping",
+                    "Stamina", "Strength", "LongShots", "Aggression", "Interceptions",
+                    "Positioning","Vision", "Penalties", "Composure", "Marking", "StandingTackle", "SlidingTackle",
+                    "GKDiving", "GKHandling", "GKKicking", "GKPositioning", "GKReflexes")
+df.use[,skill_measures] # total 42 measurements.
+
+```
+
+
+```{r, eval=FALSE}
+#inmax <- function(x) {x- min(x)/(max(x)- min(x))} #scale
+x_train <- apply(df.use[,skill_measures],2, scale)
+pca<-prcomp(x_train)
+qplot(x = 1:dim(x_train)[2], y = cumsum(pca$sdev)/sum(pca$sdev), geom = "line")
+pca_plotly <- plot_ly(as.data.frame(pca$x), x = ~PC1, y = ~PC2, z = ~PC3, color = ~df.use$BP) %>% add_markers()
+pca_plotly
+ggplot(as.data.frame(pca$x), aes(x = PC1, y = PC2, col = df.use$BP)) + geom_point()
+
+# remove gk
+df.rmgk <- df.use %>% filter(BP!="GK")
+x_train <- apply(df.rmgk[,skill_measures],2, scale)
+pca<-prcomp(x_train)
+qplot(x = 1:dim(x_train)[2], y = cumsum(pca$sdev)/sum(pca$sdev), geom = "line")
+pca_plotly <- plot_ly(as.data.frame(pca$x), x = ~PC1, y = ~PC2, z = ~PC3, color = ~df.rmgk$BP) %>% add_markers()
+pca_plotly
+ggplot(as.data.frame(pca$x), aes(x = PC1, y = PC2, col = df.rmgk$BP)) + geom_point()
+
+```
+
+
+```{r, eval=FALSE}
+# model <- keras_model_sequential() %>%
+#   layer_dense(units = 20, activation = "tanh", input_shape = ncol(x_train)) %>%
+#   layer_dense(units = 3, activation = "tanh", name = "bottleneck") %>%
+#   layer_dense(units = 20, activation = "tanh") %>%
+#   layer_dense(units = ncol(x_train))
+# 
+# model %>% compile(
+#   loss = "mse",
+#   optimizer = "adam",
+#   metrics = c('mae')
+# )
+# 
+# model %>% fit(
+#   x = x_train,
+#   y = x_train,
+#   epochs = 100,
+#   batch_size = 32,
+#   validation_split = 0.2,
+#   callbacks = list(callback_early_stopping(patience = 4))
+# )
+
+ids_train <- sample.int(nrow(df.rmgk), size=0.8* nrow(df.rmgk))
+ids_test <- setdiff(1:nrow(df.rmgk), ids_train)
+
+x_train <- df.rmgk[ids_train,skill_measures] %>% as.matrix()
+x_test <- df.rmgk[ids_test,skill_measures] %>% as.matrix()
+
+
+
+train_means <- apply(x_train, 2, mean)
+train_sds <- apply(x_train, 2, sd)
+x_train <- sweep(sweep(x_train, 2L, train_means), 2L, train_sds, "/")
+x_test <- sweep(sweep(x_test, 2L, train_means), 2L, train_sds, "/")
+
+
+model <- keras_model_sequential() %>%
+  layer_dense(units = 12, activation = "relu", input_shape = ncol(x_train)) %>%
+  layer_dense(units = 3, activation = "relu", name = "bottleneck") %>%
+  layer_dense(units = 12, activation = "relu") %>%
+  layer_dense(units = ncol(x_train))
+
+model %>% compile(
+  loss = "mean_squared_error", 
+  optimizer = "adam"
+)
+
+history <- model %>% fit(
+  x = x_train,
+  y = x_train,
+  #shuffle = TRUE,
+  epochs = 100,
+  batch_size = 32,
+  validation_data = list(x_test,x_test)
+)
+
+plot(history)
+intermediate_layer_model <- keras_model(inputs = model$input, outputs =  get_layer(model, "bottleneck")$output)
+intermediate_output <- predict(intermediate_layer_model, x_train)
+aedf <- data.frame(node1 = intermediate_output[,1],
+                   node2 = intermediate_output[,2],
+                   node3 = intermediate_output[,3])
+ae_plotly <- plot_ly(aedf, x = ~node1, y = ~node2, z = ~node3, color=df.rmgk[ids_train,]$BP) %>% add_markers()
+ae_plotly
+pca_plotly
+
+pca<-prcomp(x_train)
+pca_plotly <- plot_ly(as.data.frame(pca$x), x = ~PC1, y = ~PC2, z = ~PC3, color = ~df.rmgk[ids_train,]$BP) %>% add_markers()
+
+pca_gg <- ggplot(as.data.frame(pca$x), aes(x = PC1, y = PC2, col = df.rmgk[ids_train,]$BP)) + 
+  geom_point() +
+  scale_color_discrete(name = "location")
+
+ae_gg <- ggplot(aedf, aes(x = node1, y = node2,col =df.rmgk[ids_train,]$BP)) + 
+  geom_point() + 
+  scale_color_discrete(name = "location")
+
+```
+
+```{r, echo=FALSE}
+load("data/soccer.RData")
+# pca plot
+pca_gg
+pca_plotly
+# autoencoder plot
+plot(history)
+ae_gg
+ae_plotly
+```
+

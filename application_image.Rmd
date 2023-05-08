@@ -1,0 +1,214 @@
+---
+title: "application_image"
+author: "Zhejia Dong"
+date: "2023-05-08"
+output: html_document
+---
+
+```{r setup, include=FALSE,echo=TRUE}
+knitr::opts_chunk$set(message = F)
+knitr::opts_chunk$set(warning = F)
+knitr::opts_chunk$set(echo = FALSE, eval = TRUE,cache=TRUE,warning = FALSE,message = FALSE)
+knitr::opts_chunk$set(fig.height = 3)
+knitr::opts_chunk$set(fig.width = 4.5)
+knitr::opts_chunk$set(fig.align="center")
+```
+
+```{r library, include=FALSE,echo=TRUE}
+library(tidyverse)
+library(tidyr)
+library(lubridate)
+library(kableExtra)
+library(knitr)
+library(reshape2)
+library(data.table)
+library(ggplot2)
+library(ggthemes)
+library(tensorflow)
+library(keras)
+library(tfdatasets)
+library(ggfortify)
+library(plotly)
+```
+
+Database of facial images. Each person was photographed multiple times from different angles
+
+- Data info: <https://cam-orl.co.uk/facedatabase.html>
+- Accessed from: <https://cs.nyu.edu/~roweis/data.html>
+
+40 persons. each person has 10 photographs. 
+
+```{r}
+df <- read.csv("data/faces.csv")
+dim(df) # 64 * 64 images label for 40 individuals
+# plot of 40 persons
+par(mfrow = c(6,7), mar = rep(0,4))
+for(i in 1:40){
+  faces <- matrix(as.numeric(df[(10 * i -9),-4097]), nrow = 64)
+  plot(as.raster(faces))
+}
+
+
+```
+
+split data into test and train data by removing two images for each person
+```{r}
+set.seed(123)
+train_ind <- (1:400 %% 10 <= 8) & (1:400 %% 10 > 0)
+df <- df/255
+df_train <- df[train_ind, -4097]
+df_test <- df[!train_ind, -4097]
+df_train <- as.matrix(df_train) %>% array_reshape(dim = c(nrow(df_train), 64,64,1))
+
+```
+
+```{r pca}
+
+pca <- prcomp(df_train,center = TRUE, scale. = TRUE)
+pca_var <- pca$sdev ^2
+per_var = cumsum(pca_var)/sum(pca_var)
+plot(per_var, xlab="Principal Component ", 
+     ylab = " Cumulative Proportion of Variance Explained ", 
+     ylim=c(0,1), type = "b")
+# use first 100 components to reconstructing faces
+
+pca_components <- pca$rotation[,1:100]
+df_train_transformed <- as.matrix(df_train) %*% pca_components
+df_train_reconstru <- df_train_transformed %*% t(pca_components)
+
+df_train_reconstru_rescaled <- pmax(pmin(df_train_reconstru, 1), 0)
+
+par(mfrow = c(6,7), mar = rep(0,4))
+for(i in 1:40){
+  faces <- matrix(as.numeric(df_train[(8*i -7),]), nrow = 64)
+  plot(as.raster(faces))
+}
+
+par(mfrow = c(12,7), mar = rep(0,4))
+for(i in 1:40){
+  faces <- matrix(as.numeric(df_train_reconstru_rescaled[(8*i -7),]), nrow = 64)
+  plot(as.raster(faces))
+}
+
+
+
+```
+
+
+```{r ae}
+df_train <- df[train_ind, -4097]
+df_test <- df[!train_ind, -4097]
+df_train_array <- as.matrix(df_train) %>% array_reshape(dim = c(nrow(df_train), 64,64,1))
+df_test_array <- as.matrix(df_test) %>% array_reshape(dim = c(nrow(df_test), 64,64,1))
+
+# encoder
+
+input_layer <- 
+  layer_input(shape = c(64,64,1))
+encoder <- input_layer %>% 
+  layer_conv_2d(filters = 8,
+                kernel_size = c(3,3),
+                activation = "relu",
+                padding = "same") %>%
+  layer_max_pooling_2d(pool_size =  c(2,2)) %>%
+  layer_conv_2d(filters = 4,
+                kernel_size = c(3,3),
+                activation = "relu",
+                padding = "same") %>%
+  layer_max_pooling_2d(pool_size = c(2,2),
+                       padding = "same")
+
+decoder <- encoder %>% 
+         layer_conv_2d(filters = 4, 
+                       kernel_size = c(3,3), 
+                       activation = 'relu',
+                       padding = 'same') %>%   
+         layer_upsampling_2d(c(2,2)) %>% 
+         layer_conv_2d(filters = 8, 
+                       kernel_size = c(3,3), 
+                       activation = 'relu',
+                       padding = 'same') %>%  
+         layer_upsampling_2d(c(2,2)) %>% 
+         layer_conv_2d(filters = 1, 
+                       kernel_size = c(3,3), 
+                       activation = 'sigmoid',
+                       padding = 'same')
+model <- keras_model(inputs = input_layer, outputs = decoder)
+summary(model)
+model %>% compile(
+  loss = "mean_squared_error", 
+  optimizer = "adam"
+)
+
+history <- model %>% fit(
+  x = df_train_array,
+  y = df_train_array,
+  shuffle = TRUE,
+  epochs = 100,
+  batch_size = 8,
+  validation_data = list(df_test_array,df_test_array)
+)
+
+plot(history)
+```
+
+
+
+```{r for train}
+
+rc_ae <- predict(model, df_train_array)
+par(mfrow = c(6,7), mar = rep(0,4))
+for(i in 1:40){
+  faces <- t(matrix(rc_ae[8*i -7,,,], nrow= 64))
+  plot(as.raster(faces))
+}
+# rmse for pca
+rmse_pca <- 0
+for(i in 1:nrow(df_train)){
+  rmse_pca <- rmse_pca + sum((df_train[i,] - df_train_reconstru_rescaled[i,])^2)
+}
+rmse_pca <- sqrt(rmse_pca/nrow(df_train))
+
+rmse_ae <- 0
+
+for(i in 1:dim(df_train_array)[1]){
+  diff_mt <- df_train_array[i,,,] - rc_ae[i,,,]
+  rmse_ae <- rmse_ae + sum(diff_mt^2)
+}
+rmse_ae <- sqrt(rmse_ae/nrow(df_train))
+
+
+```
+
+```{r for test}
+rc_ae.test <- predict(model, df_test_array)
+par(mfrow = c(6,7), mar = rep(0,4))
+for(i in 1:40){
+  faces <- t(matrix(rc_ae.test[2*i,,,], nrow= 64))
+  plot(as.raster(faces))
+}
+
+
+df_test_transformed <- as.matrix(df_test) %*% pca_components
+df_test_reconstru <- df_test_transformed %*% t(pca_components)
+
+df_test_reconstru_rescaled <- pmax(pmin(df_test_reconstru, 1), 0)
+
+par(mfrow = c(3,10), mar = rep(0,4))
+
+for(i in 1:10){
+  faces <- matrix(as.numeric(df_test[(2*i),]), nrow = 64)
+  plot(as.raster(faces))
+}
+for(i in 1:10){
+  faces <- matrix(as.numeric(df_test_reconstru_rescaled[(2*i),]), nrow = 64)
+  plot(as.raster(faces))
+}
+for(i in 1:10){
+  faces <- t(matrix(rc_ae.test[2*i,,,], nrow= 64))
+  plot(as.raster(faces))
+}
+
+
+```
+
