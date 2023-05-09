@@ -100,12 +100,12 @@ ggplot(as.data.frame(pca$x), aes(x = PC1, y = PC2, col = df.rmgk[ids_train,]$BP)
 
 ```
 
-```{r, fig.width=7,fig.height=4}
+```{r, fig.width=6,fig.height=4}
 
-
-pca_plotly <- plot_ly(as.data.frame(pca$x), x = ~PC1, y = ~PC2, z = ~PC3, color = ~df.rmgk[ids_train,]$BP) %>% 
-  add_markers() %>% layout(title = "PCA three dimensions") %>% style(mergin = "auto")
-pca_plotly 
+knitr::include_graphics("figure/3dpca.png")
+#pca_plotly <- plot_ly(as.data.frame(pca$x), x = ~PC1, y = ~PC2, z = ~PC3, color = ~df.rmgk[ids_train,]$BP) %>% 
+ # add_markers() %>% layout(title = "PCA three dimensions") %>% style(mergin = "auto")
+#pca_plotly 
 ```
 
 We then plot the accumulated explained variance by each component in the following figure. The first two components can explain 52\% variation in the data and the first three components can explain 60.8\%. Althrough the amount of explained variation of the first two/three components is quite large, we still lose a lot information and cannot seperate the Midfielder and Forward position well.
@@ -176,14 +176,9 @@ ggplot(aedf, aes(x = node1, y = node2,col =df.rmgk[ids_train,]$BP)) +
  
 Three dimension with the three nodes.
 
-```{r, echo=TRUE, eval=TRUE}
-# three dimension
-aeplotly <- plot_ly(aedf, x = ~node1, y = ~node2, z = ~node3, color=df.rmgk[ids_train,]$BP) %>% 
-  add_markers() %>% layout(title = "Autoencoder three dimensions")
-aeplotly
+```{r, fig.width=6 ,fig.height=4}
+knitr::include_graphics("figure/Rplot.png")
 ```
-
-Then we see
 
 
 
