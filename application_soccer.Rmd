@@ -68,19 +68,17 @@ df.use[,skill_measures] # total 42 measurements.
 
 ```{r, eval=FALSE}
 #inmax <- function(x) {x- min(x)/(max(x)- min(x))} #scale
-x_train <- apply(df.use[,skill_measures],2, scale)
-pca<-prcomp(x_train)
-qplot(x = 1:dim(x_train)[2], y = cumsum(pca$sdev)/sum(pca$sdev), geom = "line")
+
+pca.all <- prcomp(df.use[ids_train,skill_measures], center = TRUE, scale. = TRUE)
 pca_plotly <- plot_ly(as.data.frame(pca$x), x = ~PC1, y = ~PC2, z = ~PC3, color = ~df.use$BP) %>% add_markers()
 pca_plotly
 ggplot(as.data.frame(pca$x), aes(x = PC1, y = PC2, col = df.use$BP)) + geom_point()
 
 # remove gk
 df.rmgk <- df.use %>% filter(BP!="GK")
-x_train <- apply(df.rmgk[,skill_measures],2, scale)
-pca<-prcomp(x_train)
-qplot(x = 1:dim(x_train)[2], y = cumsum(pca$sdev)/sum(pca$sdev), geom = "line")
-pca_plotly <- plot_ly(as.data.frame(pca$x), x = ~PC1, y = ~PC2, z = ~PC3, color = ~df.rmgk$BP) %>% add_markers()
+
+pca<-prcomp(df.rmgk[ids_train,skill_measures],center = TRUE, scale. = TRUE)
+pca_plotly <- plot_ly(as.data.frame(pca$x), x = ~PC1, y = ~PC2, z = ~PC3, color = ~df.rmgk[ids_train,]$BP) %>% add_markers()
 pca_plotly
 ggplot(as.data.frame(pca$x), aes(x = PC1, y = PC2, col = df.rmgk$BP)) + geom_point()
 
@@ -137,7 +135,6 @@ model %>% compile(
 history <- model %>% fit(
   x = x_train,
   y = x_train,
-  #shuffle = TRUE,
   epochs = 100,
   batch_size = 32,
   validation_data = list(x_test,x_test)
