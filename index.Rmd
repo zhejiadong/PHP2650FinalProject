@@ -164,6 +164,7 @@ aedf <- data.frame(node1 = intermediate_output[,1],
                    node3 = intermediate_output[,3])
 ```
 
+Two dimension with the first two nodes
 
 ```{r, echo=TRUE, eval=TRUE}
 # two dimension
@@ -172,13 +173,20 @@ ggplot(aedf, aes(x = node1, y = node2,col =df.rmgk[ids_train,]$BP)) +
   scale_color_discrete(name = "location") + ggtitle("Autoencoder two dimension")
 ```
 
-
+ 
+Three dimension with the three nodes.
 
 ```{r, echo=TRUE, eval=TRUE}
 # three dimension
-plot_ly(aedf, x = ~node1, y = ~node2, z = ~node3, color=df.rmgk[ids_train,]$BP) %>% 
-  add_markers()
+aeplotly <- plot_ly(aedf, x = ~node1, y = ~node2, z = ~node3, color=df.rmgk[ids_train,]$BP) %>% 
+  add_markers() %>% layout(title = "Autoencoder three dimensions")
+aeplotly
 ```
+
+Then we see
+
+
+
 
 
 ## Conclusion
