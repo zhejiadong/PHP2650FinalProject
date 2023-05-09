@@ -176,12 +176,19 @@ ggplot(aedf, aes(x = node1, y = node2,col =df.rmgk[ids_train,]$BP)) +
  
 Three dimension with the three nodes.
 
+```{r, eval=FALSE}
+ae_plotly <- plot_ly(aedf, x = ~node1, y = ~node2, z = ~node3, color=df.rmgk[ids_train,]$BP) %>% 
+  add_markers() %>% layout(title = "Autoencoder three dimensions")
+ae_plotly
+
+```
+
 ```{r, fig.width=6 ,fig.height=4}
-knitr::include_graphics("figure/Rplot.png")
+knitr::include_graphics("figure/3dae.png")
 ```
 
 
-
+## Implementation: Face images
 
 
 ## Conclusion
