@@ -1,7 +1,7 @@
 # PHP2650FinalProject
-Final project for PHP2650
+Final project for PHP2650 Statistical Learning and Big Data
 
-Tabib Chowdhury and Zhejia Dong
+Group member: Tabib Chowdhury and Zhejia Dong
 
 
 ## Overview
