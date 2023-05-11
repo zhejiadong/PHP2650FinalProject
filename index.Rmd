@@ -82,7 +82,7 @@ For more details of this data, please refer to [SOFIFA](https://sofifa.com/) and
 
 ### PCA 
 
-We start from PCA as it is less complex than the autoencoder. We first divide the dataset in train set(0.8) and test set(0.2). For PCA, we only use the train set and we use the train and test set together in next section for autoencoder. We provide the following figure to represent the train set by first two component from PCA and colored by player position.
+We start from PCA as it is less complex than the autoencoder. We first divide the dataset in train set (0.8) and test set (0.2). For PCA, we only use the train set and we use the train and test set together in next section for autoencoder. We provide the following figure to represent the train set by first two component from PCA and colored by player position.
 
 ```{r, fig.align='center'}
 rm(list = ls())
@@ -92,8 +92,9 @@ load("data/soccer.RData")
 ggplot(as.data.frame(pca.all$x), aes(x = PC1, y = PC2, col = df.use[ids_train,]$BP)) + 
   geom_point() + scale_color_discrete(name = "location") + ggtitle("PCA with GK")
 ```
-We can clear see one position GK (blue color) is successfully separated from other potions. However, we see Midfielder and Forward position can not be separated well. We then remove GK and do PCA on the new dataset and we will compare PCA and autoencoder on the new dataset to discover which one can separate three positions good in two/three dimensions.
+We can clear see one position GK (blue color) is successfully separated from other potions. However, we see Midfielder and Forward position can not be separated well. We then remove GK and do PCA on the new dataset and we will compare PCA and autoencoder on the new dataset to discover which one can separate three positions well in two/three dimensions.
 
+After removing GK and conduct PCA again, we provide the two/three dimension scatter graph from the first two/three components for the soccer player set.
 ```{r}
 
 ggplot(as.data.frame(pca$x), aes(x = PC1, y = PC2, col = df.rmgk[ids_train,]$BP)) + 
@@ -109,7 +110,7 @@ knitr::include_graphics("figure/3dpca.png")
 #pca_plotly 
 ```
 
-We then plot the accumulated explained variance by each component in the following figure. The first two components can explain 52\% variation in the data and the first three components can explain 60.8\%. Althrough the amount of explained variation of the first two/three components is quite large, we still lose a lot information and cannot seperate the Midfielder and Forward position well.
+From the scatter plot, we see that DEF is separated from FWD, while there is a lot overlap between MID and FWD. We then plot the accumulated explained variance by each component in the following figure. The first two components can explain 52\% variation in the data and the first three components can explain 60.8\%. Although the amount of explained variation of the first two/three components is quite large, we still lose a lot information and cannot separate the MID and FWD position well. Noted midfielder and forwards may share certain skill sets, such as dribbling, shooting, passing and physicality, the loses information may be important for separating plaer positions by skill measurement variables.
 
 ```{r,eval=TRUE, fig.width=4, fig.height=3}
 
@@ -154,6 +155,7 @@ plot(history)
 plot(history,  main = "Autoencoder fitting results")
 ```
 
+The following code extract the results from bottleneck, in which represent the data in three dimensions.
 
 ```{r, echo=TRUE, eval=FALSE}
 # extract results from bottleneck layer
@@ -166,17 +168,13 @@ aedf <- data.frame(node1 = intermediate_output[,1],
                    node3 = intermediate_output[,3])
 ```
 
-Two dimension with the first two nodes
-
+We also visualize the scatter graph in two dimension by the first two nodes, and in three dimension by all the three nodes.
 ```{r, echo=TRUE, eval=TRUE}
 # two dimension
 ggplot(aedf, aes(x = node1, y = node2,col =df.rmgk[ids_train,]$BP)) + 
   geom_point() + 
   scale_color_discrete(name = "location") + ggtitle("Autoencoder two dimension")
 ```
-
- 
-Three dimension with the three nodes.
 
 ```{r, eval=FALSE}
 ae_plotly <- plot_ly(aedf, x = ~node1, y = ~node2, z = ~node3, color=df.rmgk[ids_train,]$BP) %>% 
@@ -188,21 +186,18 @@ ae_plotly
 ```{r, fig.width=6 ,fig.height=4}
 knitr::include_graphics("figure/3dae.png")
 ```
+From both the two and three dimension graphs, we observe notable improvement in differentiating between MID and FWD. The autoencoder's ability to capture more complex relationships among the skill measure variables helped create a clearer separation between these positions. This suggests that the autoencoder was able to extract more distinctive features that distinguish midfielders and forwards.
 
 
 ## Implementation: Face Images
 
-
-Database of facial images. Each person was photographed multiple times from different angles
-
-- Data info: <https://cam-orl.co.uk/facedatabase.html>
-- Accessed from[^3]: <https://cs.nyu.edu/~roweis/data.html>
+In this application section, we explore a diverse dataaset of facial images sourced from Olivetti Faces[^3] [^6]. The images dataset consist 400 images (64 $\times$ 64) for 40 persons and each person with 10 photos from different angles. Our objective is to extract the intrinsic essence of these images while enhancing the efficacy of dimension reduction analysis. We conduct PCA on the image data for better comparison with autoencoder
 
 ```{r, eval=TRUE}
 rm(list = ls())
 ```
 
-
+We provide the first images for each person in the following graphs.
 ```{r, eval=TRUE,fig.width= 8, fig.height=4, fig.cap="Original first portaits for all persons"}
 rm(list = ls())
 load("data/image.RData")
@@ -215,8 +210,7 @@ for(i in 1:40){
 }# 64*64 = 4096, 4097 is for preson id.
 ```
 
-
-split data into test-train sets by removing two images fro each person
+The below code split images data into test-train sets by removing two images for each person. Therefore, the train set consist 320 images of all 40 persons but 8 images per person. The test set consist the other 80 images, 2 images per person. The matrix format df_train/df_test are for PCA, we also change the train and test set to suitable array format for autoencoder in df_train_array/df_test_array.
 
 ```{r,eval=FALSE,echo=TRUE}
 set.seed(123)
@@ -233,14 +227,25 @@ df_test_array <- as.matrix(df_test) %>% array_reshape(dim = c(nrow(df_test), 64,
 
 ### PCA
 
-```{r, eval=FALSE, echo=TRUE}
+We perform PCA on the train set. The root mean square error (RMSE) of PCA is 5.654. We provide the accumulated explained variance in PCA in the following graph.
+
+```{r, eval=FALSE, echo=FALSE}
+rmse_pca <- 0
+for(i in 1:nrow(df_train)){
+  rmse_pca <- rmse_pca + sum((df_train[i,] - df_train_reconstru_rescaled[i,])^2)
+}
+rmse_pca <- sqrt(rmse_pca/nrow(df_train))
+```
+
+
+```{r, eval=FALSE, echo=FALSE}
 pca <- prcomp(df_train,center = TRUE, scale. = TRUE)
 pca_var <- pca$sdev^2
 per_var = cumsum(pca_var)/sum(pca_var)
 
 ```
 
-```{r, eval=TRUE, echo=TRUE,fig.width=4, fig.height=3}
+```{r, eval=TRUE, echo=FALSE,fig.width=4, fig.height=3}
 rm(list = ls())
 load("data/image.RData")
 ggplot(as.data.frame(per_var), aes(y = as.numeric(per_var), x = 1:length(per_var)))+
@@ -248,7 +253,7 @@ ggplot(as.data.frame(per_var), aes(y = as.numeric(per_var), x = 1:length(per_var
   theme_minimal()  + ggtitle("Explained Variance in PCA")
 ```
 
-first 25 components can explain 80\% variation. So we use first 25 components to do dimension reduction task. We random select five persons (id = 3, 14, 15, 31, 38) and show the one original and one reconstructed portrait per person.
+We see that first 25 components can explain 80\% variation. So we use first 25 components to do dimension reduction task and to reconstruct the images. We random select five persons (id = 3, 14, 15, 31, 38) and show the one original and one reconstructed portrait per person.
 
 ```{r, eval=FALSE, echo = TRUE}
 pca_components <- pca$rotation[,1:25]
@@ -258,6 +263,7 @@ df_train_reconstru_rescaled <- pmax(pmin(df_train_reconstru, 1), 0)
 show_id <- sort(sample(1:40, 5, replace = FALSE))
 ```
 
+The upper panel is for the original images and the lower panel is for reconstructed images from PCA. Although the first 25 components can account for 80\% variation, reconstructing images based on these components struggles to effectively capture the intricate facial features that define individual identities. The resulting reconstructed images often lack the fine-grained details, nuanced expressions, and subtle variations that make each face unique. While PCA succeeds in compressing the dimensionality of the data, its limitations become apparent in the realm of facial image analysis, where capturing the essence of faces requires a more sophisticated approach. 
 
 ```{r, eval=TRUE, echo=TRUE, fig.width= 6, fig.height=4, fig.cap="Original versus reconstructed figures by PCA"}
 par(mfrow = c(2,5), mar = rep(0,4))
@@ -272,16 +278,6 @@ for(i in show_id){
 }
 ```
 
-```{r, eval=FALSE, echo=TRUE}
-rmse_pca <- 0
-for(i in 1:nrow(df_train)){
-  rmse_pca <- rmse_pca + sum((df_train[i,] - df_train_reconstru_rescaled[i,])^2)
-}
-rmse_pca <- sqrt(rmse_pca/nrow(df_train))
-```
-
-The RMSE of PCA is 5.654.
-
 
 
 ### Autoencoder
@@ -289,6 +285,7 @@ The RMSE of PCA is 5.654.
 Then we apply autoencoder on the same train and test data. Here, we use the convolutional neural network (CNN) for image dimension reduction[^5]. The CNN for autoencoder is designed to encode input images into a lower-dimensional representation and then decode it back to its original form. Unlike traditional autoencoders, which use fully connected layers for encoding and decoding, a CNN autoencoder uses convolutional layers for its encoding and decoding steps. This allows the network to capture the spatial structure and local patterns present in the input image, making it well-suited for tasks such as image denoising, compression, and feature extraction[^4].
 
 **Encoder**
+
 We use the following code for encoder:
 
 ```{r, eval=FALSE, echo=TRUE}
@@ -311,6 +308,7 @@ encoder <- input_layer %>%
 The input layer is defined as a 64x64 grayscale image with a single channel. The encoder consists of two convolutional layers with 8 and 4 filters respectively, both using a 3x3 kernel and ReLU activation function. The "same" padding is used to ensure that the output size of the convolutional layers matches the input size. Max pooling layers are then applied with a 2x2 pool size to reduce the spatial dimensions of the feature maps. The second pooling layer uses "same" padding to avoid reducing the feature map size further. This encoder will convert the input image into a lower-dimensional representation that can be used as input for the decoder of the autoencoder.
 
 **Decoder**
+
 The decoder part is in the following code:
 
 ```{r, eval=FALSE,echo=TRUE}
@@ -401,11 +399,13 @@ The plot of fitting history is provided as follows:
 plot(history)
 ```
 
-We then reconstruct the portraits by autoencoder and display the original, reconstructed by PCA and reconstructed by autoencoder portraits of sampled five persons.
-
+We then reconstruct the portraits by autoencoder.
 ```{r, echo=TRUE,eval=FALSE}
 rc_ae <- predict(model, df_train_array) # reconstructed on train data.
 ```
+The RMSE of autoencoder on train set is 2.616, which is only 46\% of the RMSE of PCA (5.654). 
+
+The following graphs display the original (upper panel), reconstructed by PCA (middle panel) and reconstructed by autoencoder (lower panel) portraits of sampled five persons. We witness remarkable improvements in the reconstructed facial images from autoencoder. The reconstructed figures from autoencoders exhibit a striking resemblance to the original images, accurately reproducing the fine-grained textures, expressions, and unique characteristics of the faces that define each individual. 
 
 ```{r, eval=TRUE, echo=TRUE, fig.width= 6, fig.height=4, fig.cap="Original versus reconstructed figures by PCA and autoencoder in train set"}
 par(mfrow = c(3,5), mar = rep(0,4))
@@ -426,24 +426,24 @@ for(i in show_id){
 ```
 
 
-The RMSE of autoencoder on train set is 2.616, which is only 46\% of the RMSE of PCA (5.654).
-```{r, echo=TRUE, eval=FALSE}
+
+
+```{r, echo=FALSE, eval=FALSE}
 rmse_ae <- 0
 for(i in 1:dim(df_train_array)[1]){
   diff_mt <- df_train_array[i,,,] - rc_ae[i,,,]
   rmse_ae <- rmse_ae + sum(diff_mt^2)
 }
 rmse_ae <- sqrt(rmse_ae/nrow(df_train))
-
 ```
 
-We then plot original, reconstructed PCA, autoencoders portraits using the test data:
-
+We also apply the autoencoder to the test set.
 ```{r, eval=FALSE, echo=TRUE}
 df_test_transformed <- as.matrix(df_test) %*% pca_components
 df_test_reconstru <- df_test_transformed %*% t(pca_components)
 df_test_reconstru_rescaled <- pmax(pmin(df_test_reconstru, 1), 0) # restrain to (0,1)
 ```
+The next graph display the original, reconstructed by PCA, and reconstructed by autoencoder images in test set.
 
 ```{r, eval=TRUE, echo=TRUE, fig.width= 6, fig.height=4, fig.cap="Original versus reconstructed figures by PCA and autoencoder in test set" }
 par(mfrow = c(3,5), mar = rep(0,4))
@@ -462,8 +462,9 @@ for(i in show_id){
 
 ```
 
+We observe autoencoder continue to yield impressive results compared to PCA, This indicates that autoencoder excels in dimension reduction while maintaining superior performance in both train and test set. 
 
-
+This application  highlights the autoencoder's superior ability to compress high-dimensional facial data while retaining crucial information, making it an ideal choice for advanced facial image analysis applications.
 
 ## Conclusion
 
@@ -477,6 +478,7 @@ for(i in show_id){
 
 [^1]: <https://www.kaggle.com/datasets/cashncarry/fifa-23-complete-player-dataset>
 [^2]: Allaire, J. J., & Chollet, F. (2020). keras: R Interface to ‘Keras’. R package version 2.3. 0.0. Computer software]. <https://CRAN.R-project.org/package=keras>
-[^3]: <https://cs.nyu.edu/~roweis/data.html>
+[^3]: Data for MATLAB hackers <https://cs.nyu.edu/~roweis/data.html>
 [^4]: Ramamurthy, M., Robinson, Y. H., Vimal, S., & Suresh, A. (2020). Auto encoder based dimensionality reduction and classification using convolutional neural networks for hyperspectral images. Microprocessors and Microsystems, 79, 103280.
 [^5]: Dimension reduction autoencoders, <https://subscription.packtpub.com/book/data/9781789538779/9/ch09lvl1sec39/dimension-reduction-autoencoders> 
+[^6]: Olivetti database at ATT: <https://cam-orl.co.uk/facedatabase.html>
