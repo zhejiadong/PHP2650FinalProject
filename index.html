@@ -172,23 +172,179 @@ Reduction</h1>
 
 <section class="main-content">
 <div id="introduction" class="section level2">
-<h2>Introduction</h2>
+<h2>1. Introduction</h2>
+<p>Dimension reduction is the process of reducing the feature size of
+the data while minimizing the total information lost in the process<a href="#fn1" class="footnote-ref" id="fnref1"><sup>1</sup></a>.
+Real-world data in machine learning, data science, and computer vision
+often have an enormous number of inputs and features that may be hard to
+visualize and interpret using traditional methods. Because of this, we
+often need to reduce the size of the dataset using dimension-reduction
+techniques.</p>
+<p>In machine learning, dimension reduction methods play an important
+role in reducing the complexity of the model-fitting process. In data
+science, dimension reduction techniques can be used to focus on what
+data scientists deem the most important features in the dataset. In
+computer vision dimension reduction is used to process and interpret
+high-dimensional image and video data.</p>
+<p>Two common dimension reduction techniques are Principal Component
+Analysis and Auto Encoders. Autoencoders are a form of neural network
+that has a bottleneck structure<a href="#fn2" class="footnote-ref" id="fnref2"><sup>2</sup></a>. They work by taking in a large unlabeled
+dataset and spitting out a smaller network of output. They do this by
+minimizing reconstruction error. The bottleneck structure of the model
+allows the autoencoder to take in a large chunk of information, keep the
+major features and throw out the non-informative features.</p>
 </div>
 <div id="what-is-autoencoder" class="section level2">
-<h2>What is Autoencoder?</h2>
+<h2>2. What is Autoencoder?</h2>
+<p>An autoencoder is a dimensional reduction method that compresses
+large data by minimizing the reconstruction error through an artificial
+neural network. This network is composed of two main parts: The encoder
+and the decoder. The encoder takes in the input and transforms it into a
+lower-dimensional latent space. The decoder then takes this compressed
+representation and reconstructs the original data as closely as
+possible.</p>
+<p>The main goal of using an autoencoder is to learn a compressed
+representation of the data that captures its essential characteristics
+while minimizing the reconstruction error between the original input and
+its compressed representation. Autoencoders are commonly used for tasks
+such as dimensionality reduction, data compression, and feature
+extraction. They are typically trained using unsupervised learning
+techniques and can be modified with additional constraints or
+regularization terms to encourage the learning of more robust or
+interpretable representations.</p>
 </div>
 <div id="variations-of-autoencoder-models" class="section level2">
-<h2>Variations of autoencoder models</h2>
+<h2>3. Variations of autoencoder models</h2>
+<p>There are many variations of autoencoders as well: Sparse autoencoder
+(SAE), Denoising autoencoder (DAE), Contractive autoencoder (CAE),
+Variational Autoencoders (VAE). Each type of autoencoder has its own
+strengths and weaknesses depending on the specific task at hand.</p>
+<div id="sparse-autoencoder" class="section level3">
+<h3>3.1. Sparse Autoencoder</h3>
+<p>This first type of neural network architecture learns to reconstruct
+input data by encoding it into a lower-dimensional representation and
+then decoding it back to the original form. The goal of an autoencoder
+is to minimize the difference between the input data and its
+reconstruction, which is typically measured using a loss function such
+as mean squared error (MSE).</p>
+<p>However, unlike a standard autoencoder, an SAE also imposes a
+constraint on the encoding layer to produce sparse representations,
+which means that only a small subset of the neurons are activated at any
+given time. This is achieved by adding a sparsity penalty term to the
+loss function, which encourages the model to use only a small number of
+features to represent the input. The sparsity constraint in an SAE can
+help to reduce overfitting and improve generalization performance, as
+well as make the model more interpretable by identifying the most
+important features of the input data. SAEs have been used in a variety
+of applications, including image and speech recognition, anomaly
+detection, and natural language processing.</p>
+</div>
+<div id="denoising-autoencoder" class="section level3">
+<h3>3.2. Denoising Autoencoder</h3>
+<p>A denoising autoencoder is similar to a standard autoencoder but with
+an added noise reduction component. In a DAE, the input data is first
+corrupted by adding some random noise to it. The network is then trained
+to reconstruct the original, noise-free input data from the corrupted
+input. By learning to remove the noise or unwanted variation from the
+input data, the denoising autoencoder can be used for tasks such as
+image denoising, speech enhancement, and data cleaning.</p>
+<p>One advantage of using denoising autoencoders is that they can be
+trained in an unsupervised manner, which means that they do not require
+labeled data for training. Additionally, DAEs can be used in combination
+with other deep learning models, such as convolutional neural networks
+(CNNs) and recurrent neural networks (RNNs), to improve their
+performance.</p>
+</div>
+<div id="contractive-autoencoder" class="section level3">
+<h3>3.3. Contractive Autoencoder</h3>
+<p>A contractive autoencoder adds an additional regularization term to
+the loss function called the “contractive penalty,” which encourages the
+network to produce stable and robust representations of the input data.
+The contractive penalty measures the sensitivity of the encoding layer
+to small variations in the input data. By constraining the network to
+produce stable and robust representations, the CAE can learn features
+that are invariant to small variations in the input data, which can
+improve generalization performance and make the network more resistant
+to overfitting.</p>
+<p>Compared to DAEs, CAEs have a different regularization mechanism that
+encourages stable representations rather than removing “noise.” Compared
+to SAEs, the CAEs have a different regularization term that measures the
+sensitivity of the encoding layer to small variations in the input
+data.</p>
+</div>
+<div id="variational-autoencoders" class="section level3">
+<h3>3.4. Variational Autoencoders</h3>
+<p>Variational autoencoders use probabilistic generative models in
+addition to autoencoders. The main difference between VAEs and
+traditional autoencoders is that VAEs learn a probabilistic distribution
+over the input data’s latent space, allowing them to generate new data
+samples that are similar to the training data but not identical. This
+makes VAEs useful for tasks such as image and video generation, as well
+as data compression and feature extraction. The training process for
+VAEs involves optimizing two loss functions: a reconstruction loss that
+measures the difference between the input and the reconstructed output,
+and a regularization term that encourages the latent space to follow a
+predefined distribution.</p>
+</div>
 </div>
 <div id="autoencoder-versus-pca" class="section level2">
-<h2>Autoencoder versus PCA</h2>
+<h2>4. Autoencoder versus PCA</h2>
+<p>Autoencoder and principal component analysis (PCA) as two common
+methods for dimension reduction. As such, there are many strengths and
+weaknesses associated with each method. For example, autoencoders can
+capture non-linear relationships while PCA is limited to linear
+relationships. autoencoders for dimension reduction, such as faster
+computation times, reduced storage requirements, the ability to capture
+complex relationships, and the sensitivity to hyperparameters.</p>
+<p>Comparison includes:</p>
+<ul>
+<li><p>PCA features are totally linearly uncorrelated with each other
+since features are projections onto the orthogonal basis<a href="#fn3" class="footnote-ref" id="fnref3"><sup>3</sup></a>.</p></li>
+<li><p>PCA is generally faster and computationally cheaper than
+autoencoders</p></li>
+<li><p>A single-layered autoencoder with a linear activation function is
+similar to PCA and can achieve similar results in terms of
+dimensionality reduction</p></li>
+<li><p>Autoencoders can be prone to overfitting due to their high number
+of parameters, but this can be mitigated through careful design and
+regularization techniques</p></li>
+</ul>
+<p>In order for dimensionality reduction to be successful, the features
+of the dataset should have some underlying structure in a lower
+dimensional space. This means that there should be some relationship or
+correlation between the features. If this is the case, traditional
+methods like PCA can be effective in reducing the dimensionality of the
+data.</p>
+<p>However, if the lower dimensional structure of the data has
+non-linearity or curvature, autoencoders can be a better choice.
+Autoencoders can capture this non-linearity and encode more information
+in fewer dimensions, making them a more efficient and effective
+dimensionality reduction technique in such scenarios. Therefore, the
+choice between using PCA or autoencoders for dimensionality reduction
+depends on the structure and complexity of the data being analyzed.</p>
 </div>
 <div id="applications-of-autoencoders" class="section level2">
-<h2>Applications of Autoencoders</h2>
+<h2>5. Applications of Autoencoders</h2>
+<p>Applications of autoencoders vary from image and speech recognition,
+and text analysis, to anomaly detection. Autoencoders are versatile
+neural networks that can be used for a variety of tasks, including
+dimensionality reduction, feature extraction, image denoising,
+compression and search, anomaly detection, and missing value imputation.
+Autoencoders can efficiently reduce the dimensionality of
+high-dimensional data, making it easier to work with and process. They
+can also learn efficient codings of the data structure, which can be
+used for supervised learning tasks. In addition, autoencoders can be
+used to denoise and compress images, by minimizing the reconstruction
+error from the original target output, or to search for similar images
+by comparing the compressed embeddings. Autoencoders can also be used
+for anomaly detection, to detect fraudulent transactions or other highly
+imbalanced supervised tasks. Finally, autoencoders can be used for
+missing value imputation, by reconstructing the input data based on the
+learned structure of the data<a href="#fn4" class="footnote-ref" id="fnref4"><sup>4</sup></a>.</p>
 </div>
 <div id="implementation-soccer-player-data" class="section level2">
-<h2>Implementation: Soccer Player Data</h2>
-<p>In this example, we use the FIFA 23 soccer player data from <a href="https://www.kaggle.com/datasets/cashncarry/fifa-23-complete-player-dataset">Kaggle</a><a href="#fn1" class="footnote-ref" id="fnref1"><sup>1</sup></a>. FIFA 23
+<h2>6. Implementation: Soccer Player Data</h2>
+<p>In this example, we use the FIFA 23 soccer player data from <a href="https://www.kaggle.com/datasets/cashncarry/fifa-23-complete-player-dataset">Kaggle</a><a href="#fn5" class="footnote-ref" id="fnref5"><sup>5</sup></a>. FIFA 23
 is the most popular soccer videogame. The data contains the following
 information about all the professional soccer players in FIFA 23:</p>
 <ul>
@@ -243,7 +399,7 @@ variables.</p>
 <div id="autoencoder" class="section level3">
 <h3>Autoencoder</h3>
 <p>Then we perform the autoencoder analysis for this dataset. The
-autoencoder is constructed using the package Keras<a href="#fn2" class="footnote-ref" id="fnref2"><sup>2</sup></a> in R. We only consider
+autoencoder is constructed using the package Keras<a href="#fn6" class="footnote-ref" id="fnref6"><sup>6</sup></a> in R. We only consider
 three layers here: first layer is encoder with 12 nodes, the second
 layer is bottleneck with 3 nodes and the last layer is decoder with 12
 nodes. Here, bottleneck layer has a lower dimensional than the input and
@@ -301,9 +457,9 @@ features that distinguish midfielders and forwards.</p>
 </div>
 </div>
 <div id="implementation-face-images" class="section level2">
-<h2>Implementation: Face Images</h2>
+<h2>7. Implementation: Face Images</h2>
 <p>In this application section, we explore a diverse dataaset of facial
-images sourced from Olivetti Faces<a href="#fn3" class="footnote-ref" id="fnref3"><sup>3</sup></a> <a href="#fn4" class="footnote-ref" id="fnref4"><sup>4</sup></a>. The images dataset consist 400 images (64
+images sourced from Olivetti Faces<a href="#fn7" class="footnote-ref" id="fnref7"><sup>7</sup></a> <a href="#fn8" class="footnote-ref" id="fnref8"><sup>8</sup></a>. The images dataset consist 400 images (64
 <span class="math inline">\(\times\)</span> 64) for 40 persons and each
 person with 10 photos from different angles. Our objective is to extract
 the intrinsic essence of these images while enhancing the efficacy of
@@ -377,14 +533,14 @@ Original versus reconstructed figures by PCA
 <h3>Autoencoder</h3>
 <p>Then we apply autoencoder on the same train and test data. Here, we
 use the convolutional neural network (CNN) for image dimension
-reduction<a href="#fn5" class="footnote-ref" id="fnref5"><sup>5</sup></a>. The CNN for autoencoder is designed to
+reduction<a href="#fn9" class="footnote-ref" id="fnref9"><sup>9</sup></a>. The CNN for autoencoder is designed to
 encode input images into a lower-dimensional representation and then
 decode it back to its original form. Unlike traditional autoencoders,
 which use fully connected layers for encoding and decoding, a CNN
 autoencoder uses convolutional layers for its encoding and decoding
 steps. This allows the network to capture the spatial structure and
 local patterns present in the input image, making it well-suited for
-tasks such as image denoising, compression, and feature extraction<a href="#fn6" class="footnote-ref" id="fnref6"><sup>6</sup></a>.</p>
+tasks such as image denoising, compression, and feature extraction<a href="#fn10" class="footnote-ref" id="fnref10"><sup>10</sup></a>.</p>
 <p><strong>Encoder</strong></p>
 <p>We use the following code for encoder:</p>
 <div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>input_layer <span class="ot">&lt;-</span> </span>
@@ -562,7 +718,36 @@ analysis applications.</p>
 </div>
 </div>
 <div id="conclusion" class="section level2">
-<h2>Conclusion</h2>
+<h2>8. Conclusion</h2>
+<p>Dimension reduction is an important process in machine learning, data
+science, and computer vision. It involves reducing the number of
+features in a dataset while minimizing information loss. Autoencoders
+are a popular form of neural network used for dimension reduction, data
+compression, and feature extraction. They are trained using unsupervised
+learning techniques and work by minimizing the reconstruction error
+between the input data and its compressed representation. There are
+several variations of autoencoders, including sparse autoencoders,
+denoising autoencoders, contractive autoencoders, and variational
+autoencoders. Each type of autoencoder has its own strengths and
+weaknesses depending on the specific task at hand. Applications such as
+in bioinformatics, autoencoders can be used to identify patterns in gene
+expression data, and can help identify biomarkers for disease diagnosis
+and treatment. Overall, <strong>autoencoders are a powerful tool for
+reducing the complexity of high-dimensional data and extracting the most
+important features for analysis</strong>.</p>
+<p>It is important to explore implementing autoencoder models for their
+specific data and problem domains. With the availability of powerful
+machine learning libraries and frameworks, it is now easier than ever to
+build and train autoencoder models, even for those with limited
+programming experience. By experimenting with different architectures
+and hyperparameters, users can discover the potential of autoencoder
+dimension reduction for their own research or business needs.</p>
+</div>
+<div id="github" class="section level2">
+<h2>Github</h2>
+<p>Please find our <a href="https://github.com/zhejiadong/PHP2650FinalProject">github
+repository</a> and the <a href="https://zhejiadong.github.io/PHP2650FinalProject/">github page</a>
+for this post.</p>
 </div>
 <div id="reference" class="section level2">
 <h2>Reference</h2>
@@ -570,16 +755,24 @@ analysis applications.</p>
 <div class="footnotes footnotes-end-of-document">
 <hr />
 <ol>
-<li id="fn1"><p><a href="https://www.kaggle.com/datasets/cashncarry/fifa-23-complete-player-dataset" class="uri">https://www.kaggle.com/datasets/cashncarry/fifa-23-complete-player-dataset</a><a href="#fnref1" class="footnote-back">↩︎</a></p></li>
-<li id="fn2"><p>Allaire, J. J., &amp; Chollet, F. (2020). keras: R
-Interface to ‘Keras’. R package version 2.3. 0.0. Computer software]. <a href="https://CRAN.R-project.org/package=keras" class="uri">https://CRAN.R-project.org/package=keras</a><a href="#fnref2" class="footnote-back">↩︎</a></p></li>
-<li id="fn3"><p>Data for MATLAB hackers <a href="https://cs.nyu.edu/~roweis/data.html" class="uri">https://cs.nyu.edu/~roweis/data.html</a><a href="#fnref3" class="footnote-back">↩︎</a></p></li>
-<li id="fn4"><p>Olivetti database at ATT: <a href="https://cam-orl.co.uk/facedatabase.html" class="uri">https://cam-orl.co.uk/facedatabase.html</a><a href="#fnref4" class="footnote-back">↩︎</a></p></li>
-<li id="fn5"><p>Dimension reduction autoencoders, <a href="https://subscription.packtpub.com/book/data/9781789538779/9/ch09lvl1sec39/dimension-reduction-autoencoders" class="uri">https://subscription.packtpub.com/book/data/9781789538779/9/ch09lvl1sec39/dimension-reduction-autoencoders</a><a href="#fnref5" class="footnote-back">↩︎</a></p></li>
-<li id="fn6"><p>Ramamurthy, M., Robinson, Y. H., Vimal, S., &amp;
+<li id="fn1"><p>Carreira-Perpinán, M. A. (1997). A review of dimension
+reduction techniques. Department of Computer Science. University of
+Sheffield. Tech. Rep. CS-96-09, 9, 1-69.<a href="#fnref1" class="footnote-back">↩︎</a></p></li>
+<li id="fn2"><p>Bank, D., Koenigstein, N., &amp; Giryes, R. (2020).
+Autoencoders. arXiv preprint arXiv:2003.05991.<a href="#fnref2" class="footnote-back">↩︎</a></p></li>
+<li id="fn3"><p>Autoencoders vs PCA: when to use? <a href="https://towardsdatascience.com/autoencoders-vs-pca-when-to-use-which-73de063f5d7" class="uri">https://towardsdatascience.com/autoencoders-vs-pca-when-to-use-which-73de063f5d7</a><a href="#fnref3" class="footnote-back">↩︎</a></p></li>
+<li id="fn4"><p>7 Applications of Auto-Encoders every Data Scientist
+should know. <a href="https://towardsdatascience.com/6-applications-of-auto-encoders-every-data-scientist-should-know-dc703cbc892b" class="uri">https://towardsdatascience.com/6-applications-of-auto-encoders-every-data-scientist-should-know-dc703cbc892b</a><a href="#fnref4" class="footnote-back">↩︎</a></p></li>
+<li id="fn5"><p>FIFA23 complete data. <a href="https://www.kaggle.com/datasets/cashncarry/fifa-23-complete-player-dataset" class="uri">https://www.kaggle.com/datasets/cashncarry/fifa-23-complete-player-dataset</a><a href="#fnref5" class="footnote-back">↩︎</a></p></li>
+<li id="fn6"><p>Allaire, J. J., &amp; Chollet, F. (2020). keras: R
+Interface to ‘Keras’. R package version 2.3. 0.0. Computer software]. <a href="https://CRAN.R-project.org/package=keras" class="uri">https://CRAN.R-project.org/package=keras</a><a href="#fnref6" class="footnote-back">↩︎</a></p></li>
+<li id="fn7"><p>Data for MATLAB hackers. <a href="https://cs.nyu.edu/~roweis/data.html" class="uri">https://cs.nyu.edu/~roweis/data.html</a><a href="#fnref7" class="footnote-back">↩︎</a></p></li>
+<li id="fn8"><p>Olivetti database at ATT. <a href="https://cam-orl.co.uk/facedatabase.html" class="uri">https://cam-orl.co.uk/facedatabase.html</a><a href="#fnref8" class="footnote-back">↩︎</a></p></li>
+<li id="fn9"><p>Dimension reduction autoencoders. <a href="https://subscription.packtpub.com/book/data/9781789538779/9/ch09lvl1sec39/dimension-reduction-autoencoders" class="uri">https://subscription.packtpub.com/book/data/9781789538779/9/ch09lvl1sec39/dimension-reduction-autoencoders</a><a href="#fnref9" class="footnote-back">↩︎</a></p></li>
+<li id="fn10"><p>Ramamurthy, M., Robinson, Y. H., Vimal, S., &amp;
 Suresh, A. (2020). Auto encoder based dimensionality reduction and
 classification using convolutional neural networks for hyperspectral
-images. Microprocessors and Microsystems, 79, 103280.<a href="#fnref6" class="footnote-back">↩︎</a></p></li>
+images. Microprocessors and Microsystems, 79, 103280.<a href="#fnref10" class="footnote-back">↩︎</a></p></li>
 </ol>
 </div>
 </section>
