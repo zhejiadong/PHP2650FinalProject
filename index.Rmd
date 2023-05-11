@@ -64,7 +64,7 @@ library(ggfortify)
 
 ## Applications of Autoencoders
 
-## Implementation:Soccer Player Data
+## Implementation: Soccer Player Data
 
 In this example, we use the FIFA 23 soccer player data from
 [Kaggle](https://www.kaggle.com/datasets/cashncarry/fifa-23-complete-player-dataset)[^1]. FIFA 23 is the most popular soccer videogame. The data contains the following information about all the professional soccer players in FIFA 23:
@@ -85,6 +85,7 @@ For more details of this data, please refer to [SOFIFA](https://sofifa.com/) and
 We start from PCA as it is less complex than the autoencoder. We first divide the dataset in train set(0.8) and test set(0.2). For PCA, we only use the train set and we use the train and test set together in next section for autoencoder. We provide the following figure to represent the train set by first two component from PCA and colored by player position.
 
 ```{r, fig.align='center'}
+rm(list = ls())
 load("data/soccer.RData")
 
 
@@ -110,14 +111,15 @@ knitr::include_graphics("figure/3dpca.png")
 
 We then plot the accumulated explained variance by each component in the following figure. The first two components can explain 52\% variation in the data and the first three components can explain 60.8\%. Althrough the amount of explained variation of the first two/three components is quite large, we still lose a lot information and cannot seperate the Midfielder and Forward position well.
 
-```{r, fig.width=4, fig.height=3}
+```{r,eval=TRUE, fig.width=4, fig.height=3}
+
 
 pca_var <- pca$sdev^2
 per_var <- cumsum(pca_var)/sum(pca_var) 
 
 ggplot(as.data.frame(per_var), aes(y = as.numeric(per_var), x = 1:length(per_var)))+
- geom_point(colour = "blue") + geom_line()+ ylab("Explained variance") + xlab("Component") +
-  theme_minimal()  + ggtitle("Explained Variance in PCA")
+ geom_point(colour = "blue") +  ylab("Explained variance") + xlab("Component") + 
+  ggtitle("Explained Variance in PCA")
 ```
 
 ### Autoencoder
@@ -202,6 +204,7 @@ rm(list = ls())
 
 
 ```{r, eval=TRUE,fig.width= 8, fig.height=4, fig.cap="Original first portaits for all persons"}
+rm(list = ls())
 load("data/image.RData")
 
 # plot of 40 persons, first photograph for each person
@@ -232,14 +235,16 @@ df_test_array <- as.matrix(df_test) %>% array_reshape(dim = c(nrow(df_test), 64,
 
 ```{r, eval=FALSE, echo=TRUE}
 pca <- prcomp(df_train,center = TRUE, scale. = TRUE)
-pca_var <- pca$sdev ^2
+pca_var <- pca$sdev^2
 per_var = cumsum(pca_var)/sum(pca_var)
 
 ```
 
-```{r, eval=TRUE, echo=TRUE}
+```{r, eval=TRUE, echo=TRUE,fig.width=4, fig.height=3}
+rm(list = ls())
+load("data/image.RData")
 ggplot(as.data.frame(per_var), aes(y = as.numeric(per_var), x = 1:length(per_var)))+
- geom_point(colour = "blue") + geom_line()+ ylab("Explained variance") + xlab("Component") +
+ geom_point(colour = "blue") + ylab("Explained variance") + xlab("Component") +
   theme_minimal()  + ggtitle("Explained Variance in PCA")
 ```
 
@@ -402,7 +407,7 @@ We then reconstruct the portraits by autoencoder and display the original, recon
 rc_ae <- predict(model, df_train_array) # reconstructed on train data.
 ```
 
-```{r, eval=TRUE, echo=TRUE, fig.width= 6, fig.height=4, fig.cap="Original versus reconstructed figures by PCA and autoencoder"}
+```{r, eval=TRUE, echo=TRUE, fig.width= 6, fig.height=4, fig.cap="Original versus reconstructed figures by PCA and autoencoder in train set"}
 par(mfrow = c(3,5), mar = rep(0,4))
 for(i in show_id){
   faces <- matrix(as.numeric(df_train[(8*i -7),]), nrow = 64)
@@ -440,7 +445,7 @@ df_test_reconstru <- df_test_transformed %*% t(pca_components)
 df_test_reconstru_rescaled <- pmax(pmin(df_test_reconstru, 1), 0) # restrain to (0,1)
 ```
 
-```{r, eval=TRUE, echo=TRUE, fig.width= 6, fig.height=4, fig.cap="Original versus reconstructed figures by PCA and autoencoder" }
+```{r, eval=TRUE, echo=TRUE, fig.width= 6, fig.height=4, fig.cap="Original versus reconstructed figures by PCA and autoencoder in test set" }
 par(mfrow = c(3,5), mar = rep(0,4))
 for(i in show_id){
   faces <- matrix(as.numeric(df_test[(2*i),]), nrow = 64)
