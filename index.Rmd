@@ -1,6 +1,6 @@
 ---
 title: "Autoencoders for Demonsion Reduction"
-author: "Zhejia Dong & Tabib Chowdhury"
+author: "Tabib Chowdhury & Zhejia Dong"
 date: ""
 header-includes:
   - \usepackage{color}
