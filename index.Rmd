@@ -148,7 +148,7 @@ history <- model %>% fit(
 plot(history)
 ```
 
-```{r, fig.width= 6, fig.cap="Autoencoder fitting results for train and test data"}
+```{r, fig.width= 6, fig.cap="Autoencoder fitting history for train and test data"}
 plot(history,  main = "Autoencoder fitting results")
 ```
 
@@ -188,7 +188,276 @@ knitr::include_graphics("figure/3dae.png")
 ```
 
 
-## Implementation: Face images
+## Implementation: Face Images
+
+
+Database of facial images. Each person was photographed multiple times from different angles
+
+- Data info: <https://cam-orl.co.uk/facedatabase.html>
+- Accessed from[^3]: <https://cs.nyu.edu/~roweis/data.html>
+
+```{r, eval=TRUE}
+rm(list = ls())
+```
+
+
+```{r, eval=TRUE,fig.width= 8, fig.height=4, fig.cap="Original first portaits for all persons"}
+load("data/image.RData")
+
+# plot of 40 persons, first photograph for each person
+par(mfrow = c(6,7), mar = rep(0,4))
+for(i in 1:40){
+  faces <- matrix(as.numeric(df[(10 * i -9),-4097]), nrow = 64)
+  plot(as.raster(faces))
+}# 64*64 = 4096, 4097 is for preson id.
+```
+
+
+split data into test-train sets by removing two images fro each person
+
+```{r,eval=FALSE,echo=TRUE}
+set.seed(123)
+train_ind <- (1:400 %% 10 <= 8) & (1:400 %% 10 > 0)
+df <- df[,-4097]/255
+df_train <- df[train_ind, -4097]
+df_test <- df[!train_ind, -4097]
+
+# same train and test set but change suitable format for autoencoder 
+df_train_array <- as.matrix(df_train) %>% array_reshape(dim = c(nrow(df_train), 64,64,1))
+df_test_array <- as.matrix(df_test) %>% array_reshape(dim = c(nrow(df_test), 64,64,1))
+
+```
+
+### PCA
+
+```{r, eval=FALSE, echo=TRUE}
+pca <- prcomp(df_train,center = TRUE, scale. = TRUE)
+pca_var <- pca$sdev ^2
+per_var = cumsum(pca_var)/sum(pca_var)
+
+```
+
+```{r, eval=TRUE, echo=TRUE}
+ggplot(as.data.frame(per_var), aes(y = as.numeric(per_var), x = 1:length(per_var)))+
+ geom_point(colour = "blue") + geom_line()+ ylab("Explained variance") + xlab("Component") +
+  theme_minimal()  + ggtitle("Explained Variance in PCA")
+```
+
+first 25 components can explain 80\% variation. So we use first 25 components to do dimension reduction task. We random select five persons (id = 3, 14, 15, 31, 38) and show the one original and one reconstructed portrait per person.
+
+```{r, eval=FALSE, echo = TRUE}
+pca_components <- pca$rotation[,1:25]
+df_train_transformed <- as.matrix(df_train) %*% pca_components
+df_train_reconstru <- df_train_transformed %*% t(pca_components)
+df_train_reconstru_rescaled <- pmax(pmin(df_train_reconstru, 1), 0)
+show_id <- sort(sample(1:40, 5, replace = FALSE))
+```
+
+
+```{r, eval=TRUE, echo=TRUE, fig.width= 6, fig.height=4, fig.cap="Original versus reconstructed figures by PCA"}
+par(mfrow = c(2,5), mar = rep(0,4))
+for(i in show_id){
+  faces <- matrix(as.numeric(df_train[(8*i -7),]), nrow = 64)
+  plot(as.raster(faces))
+}
+
+for(i in show_id){
+  faces <- matrix(as.numeric(df_train_reconstru_rescaled[(8*i -7),]), nrow = 64)
+  plot(as.raster(faces))
+}
+```
+
+```{r, eval=FALSE, echo=TRUE}
+rmse_pca <- 0
+for(i in 1:nrow(df_train)){
+  rmse_pca <- rmse_pca + sum((df_train[i,] - df_train_reconstru_rescaled[i,])^2)
+}
+rmse_pca <- sqrt(rmse_pca/nrow(df_train))
+```
+
+The RMSE of PCA is 5.654.
+
+
+
+### Autoencoder
+
+Then we apply autoencoder on the same train and test data. Here, we use the convolutional neural network (CNN) for image dimension reduction[^5]. The CNN for autoencoder is designed to encode input images into a lower-dimensional representation and then decode it back to its original form. Unlike traditional autoencoders, which use fully connected layers for encoding and decoding, a CNN autoencoder uses convolutional layers for its encoding and decoding steps. This allows the network to capture the spatial structure and local patterns present in the input image, making it well-suited for tasks such as image denoising, compression, and feature extraction[^4].
+
+**Encoder**
+We use the following code for encoder:
+
+```{r, eval=FALSE, echo=TRUE}
+input_layer <- 
+  layer_input(shape = c(64,64,1))
+encoder <- input_layer %>% 
+  layer_conv_2d(filters = 8,
+                kernel_size = c(3,3),
+                activation = "relu",
+                padding = "same") %>%
+  layer_max_pooling_2d(pool_size =  c(2,2)) %>%
+  layer_conv_2d(filters = 4,
+                kernel_size = c(3,3),
+                activation = "relu",
+                padding = "same") %>%
+  layer_max_pooling_2d(pool_size = c(2,2),
+                       padding = "same")
+```
+
+The input layer is defined as a 64x64 grayscale image with a single channel. The encoder consists of two convolutional layers with 8 and 4 filters respectively, both using a 3x3 kernel and ReLU activation function. The "same" padding is used to ensure that the output size of the convolutional layers matches the input size. Max pooling layers are then applied with a 2x2 pool size to reduce the spatial dimensions of the feature maps. The second pooling layer uses "same" padding to avoid reducing the feature map size further. This encoder will convert the input image into a lower-dimensional representation that can be used as input for the decoder of the autoencoder.
+
+**Decoder**
+The decoder part is in the following code:
+
+```{r, eval=FALSE,echo=TRUE}
+decoder <- encoder %>% 
+         layer_conv_2d(filters = 4, 
+                       kernel_size = c(3,3), 
+                       activation = 'relu',
+                       padding = 'same') %>%   
+         layer_upsampling_2d(c(2,2)) %>% 
+         layer_conv_2d(filters = 8, 
+                       kernel_size = c(3,3), 
+                       activation = 'relu',
+                       padding = 'same') %>%  
+         layer_upsampling_2d(c(2,2)) %>% 
+         layer_conv_2d(filters = 1, 
+                       kernel_size = c(3,3), 
+                       activation = 'sigmoid',
+                       padding = 'same')
+```
+
+The decoder takes output from the encoder to reconstruct the original input image. Similarly to encoder, the decoder consists of three layers with ReLU activation function. The unsampling function is used to increase the spatial dimensions of the feature maps by a factor of 2. The last convolutional layer with a single filter uses a sigmoid activation function to output the reconstructed image. The "same" padding is used in each layer to match the input and output dimensions.
+
+**Model compile**
+
+With the encoder and decoder part, the autoencoder model is defined as:
+
+```{r, eval=FALSE,echo=TRUE}
+model <- keras_model(inputs = input_layer, outputs = decoder)
+```
+
+We provide the summary of the model to show the structure and the number of parameters in details in the following:
+
+```{r, eval=TRUE,echo=FALSE}
+input_layer <- 
+  layer_input(shape = c(64,64,1))
+encoder <- input_layer %>% 
+  layer_conv_2d(filters = 8,
+                kernel_size = c(3,3),
+                activation = "relu",
+                padding = "same") %>%
+  layer_max_pooling_2d(pool_size =  c(2,2)) %>%
+  layer_conv_2d(filters = 4,
+                kernel_size = c(3,3),
+                activation = "relu",
+                padding = "same") %>%
+  layer_max_pooling_2d(pool_size = c(2,2),
+                       padding = "same")
+decoder <- encoder %>% 
+         layer_conv_2d(filters = 4, 
+                       kernel_size = c(3,3), 
+                       activation = 'relu',
+                       padding = 'same') %>%   
+         layer_upsampling_2d(c(2,2)) %>% 
+         layer_conv_2d(filters = 8, 
+                       kernel_size = c(3,3), 
+                       activation = 'relu',
+                       padding = 'same') %>%  
+         layer_upsampling_2d(c(2,2)) %>% 
+         layer_conv_2d(filters = 1, 
+                       kernel_size = c(3,3), 
+                       activation = 'sigmoid',
+                       padding = 'same')
+model <- keras_model(inputs = input_layer, outputs = decoder)
+summary(model)
+```
+The model consist of five convolutional layers, two maximum pooling layers, and two unsampling layers, and we have 889 parameters in this model.
+
+The model is then compiled using the mean squared error loss function and the Adam optimizer. We use the test set as the validation data in fitting the model. The epoch is 100 and batch size is 8. The shuffle parameter specifies whether to shuffle the training data at the beginning of each epoch. When "shuffle" is set to "TRUE", the training data is randomly shuffled before each epoch. This is helpful to reduce the risk of overfitting to the training data and improve the generalization performance of the model.
+
+```{r, echo=TRUE,eval=FALSE}
+model %>% compile(
+  loss = "mean_squared_error", 
+  optimizer = "adam"
+)
+
+history <- model %>% fit(
+  x = df_train_array,
+  y = df_train_array,
+  shuffle = TRUE,
+  epochs = 100,
+  batch_size = 8,
+  validation_data = list(df_test_array,df_test_array)
+)
+```
+
+The plot of fitting history is provided as follows:
+```{r, echo=TRUE,eval=TRUE, fig.width=6, fig.cap="Autoencoder fitting history"}
+plot(history)
+```
+
+We then reconstruct the portraits by autoencoder and display the original, reconstructed by PCA and reconstructed by autoencoder portraits of sampled five persons.
+
+```{r, echo=TRUE,eval=FALSE}
+rc_ae <- predict(model, df_train_array) # reconstructed on train data.
+```
+
+```{r, eval=TRUE, echo=TRUE, fig.width= 6, fig.height=4, fig.cap="Original versus reconstructed figures by PCA and autoencoder"}
+par(mfrow = c(3,5), mar = rep(0,4))
+for(i in show_id){
+  faces <- matrix(as.numeric(df_train[(8*i -7),]), nrow = 64)
+  plot(as.raster(faces))
+}
+
+for(i in show_id){
+  faces <- matrix(as.numeric(df_train_reconstru_rescaled[(8*i -7),]), nrow = 64)
+  plot(as.raster(faces))
+}
+
+for(i in show_id){
+  faces <- t(matrix(rc_ae[8*i -7,,,], nrow= 64))
+  plot(as.raster(faces))
+}
+```
+
+
+The RMSE of autoencoder on train set is 2.616, which is only 46\% of the RMSE of PCA (5.654).
+```{r, echo=TRUE, eval=FALSE}
+rmse_ae <- 0
+for(i in 1:dim(df_train_array)[1]){
+  diff_mt <- df_train_array[i,,,] - rc_ae[i,,,]
+  rmse_ae <- rmse_ae + sum(diff_mt^2)
+}
+rmse_ae <- sqrt(rmse_ae/nrow(df_train))
+
+```
+
+We then plot original, reconstructed PCA, autoencoders portraits using the test data:
+
+```{r, eval=FALSE, echo=TRUE}
+df_test_transformed <- as.matrix(df_test) %*% pca_components
+df_test_reconstru <- df_test_transformed %*% t(pca_components)
+df_test_reconstru_rescaled <- pmax(pmin(df_test_reconstru, 1), 0) # restrain to (0,1)
+```
+
+```{r, eval=TRUE, echo=TRUE, fig.width= 6, fig.height=4, fig.cap="Original versus reconstructed figures by PCA and autoencoder" }
+par(mfrow = c(3,5), mar = rep(0,4))
+for(i in show_id){
+  faces <- matrix(as.numeric(df_test[(2*i),]), nrow = 64)
+  plot(as.raster(faces))
+}
+for(i in show_id){
+  faces <- matrix(as.numeric(df_test_reconstru_rescaled[(2*i),]), nrow = 64)
+  plot(as.raster(faces))
+}
+for(i in show_id){
+  faces <- t(matrix(rc_ae.test[2*i,,,], nrow= 64))
+  plot(as.raster(faces))
+}
+
+```
+
+
 
 
 ## Conclusion
@@ -203,3 +472,6 @@ knitr::include_graphics("figure/3dae.png")
 
 [^1]: <https://www.kaggle.com/datasets/cashncarry/fifa-23-complete-player-dataset>
 [^2]: Allaire, J. J., & Chollet, F. (2020). keras: R Interface to ‘Keras’. R package version 2.3. 0.0. Computer software]. <https://CRAN.R-project.org/package=keras>
+[^3]: <https://cs.nyu.edu/~roweis/data.html>
+[^4]: Ramamurthy, M., Robinson, Y. H., Vimal, S., & Suresh, A. (2020). Auto encoder based dimensionality reduction and classification using convolutional neural networks for hyperspectral images. Microprocessors and Microsystems, 79, 103280.
+[^5]: Dimension reduction autoencoders, <https://subscription.packtpub.com/book/data/9781789538779/9/ch09lvl1sec39/dimension-reduction-autoencoders> 
