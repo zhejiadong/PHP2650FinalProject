@@ -15,3 +15,8 @@ In this project we review of autoencoder, a powerful dimension reduction techniq
 * `application_image`: implementation of autoencoder on facial image data
 * `\figure`: folder to save figures for this post: 3-Deminsion figures for PCA and autoencoder in soccer data, and the other figures 
 * `\Data`: folder to save all used data in *csv* or *RData* format
+
+## Repository and Pages address
+
+- Github repository for this project: <https://github.com/zhejiadong/PHP2650FinalProject>
+- Pages for this project: <https://zhejiadong.github.io/PHP2650FinalProject/>
