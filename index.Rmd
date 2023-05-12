@@ -65,7 +65,12 @@ Two common dimension reduction techniques are Principal Component Analysis and A
 
 ## 2. What is Autoencoder?
 
-An autoencoder is a dimensional reduction method that compresses large data by minimizing the reconstruction error through an artificial neural network. This network is composed of two main parts: The encoder and the decoder. The encoder takes in the input and transforms it into a lower-dimensional latent space. The decoder then takes this compressed representation and reconstructs the original data as closely as possible.
+An autoencoder is a dimensional reduction method that compresses large data by minimizing the reconstruction error through an artificial neural network. This network is composed of two main parts: The encoder and the decoder. The encoder takes in the input and transforms it into a lower-dimensional latent space. The decoder then takes this compressed representation and reconstructs the original data as closely as possible. The basic structure of the neural network can be visualized below:
+
+```{r, fig.width=6, fig.height=4, fig.cap="Structure for autoencoder"}
+knitr::include_graphics("figure/autoencoder.png")
+```
+
 
 The main goal of using an autoencoder is to learn a compressed representation of the data that captures its essential characteristics while minimizing the reconstruction error between the original input and its compressed representation. Autoencoders are commonly used for tasks such as dimensionality reduction, data compression, and feature extraction. They are typically trained using unsupervised learning techniques and can be modified with additional constraints or regularization terms to encourage the learning of more robust or interpretable representations.
 
@@ -77,9 +82,14 @@ There are many variations of autoencoders as well: Sparse autoencoder (SAE), Den
 
 ### 3.1. Sparse Autoencoder
 
-This first type of neural network architecture learns to reconstruct input data by encoding it into a lower-dimensional representation and then decoding it back to the original form. The goal of an autoencoder is to minimize the difference between the input data and its reconstruction, which is typically measured using a loss function such as mean squared error (MSE).
+This first type of neural network architecture learns to reconstruct input data by encoding it into a lower-dimensional representation and then decoding it back to the original form[^11]. The goal of an autoencoder is to minimize the difference between the input data and its reconstruction, which is typically measured using an objective function consist of a loss function such as mean squared error (MSE) and other parts:
 
-However, unlike a standard autoencoder, an SAE also imposes a constraint on the encoding layer to produce sparse representations, which means that only a small subset of the neurons are activated at any given time. This is achieved by adding a sparsity penalty term to the loss function, which encourages the model to use only a small number of features to represent the input. The sparsity constraint in an SAE can help to reduce overfitting and improve generalization performance, as well as make the model more interpretable by identifying the most important features of the input data. SAEs have been used in a variety of applications, including image and speech recognition, anomaly detection, and natural language processing.
+$$
+\text{Obj} = L(x,\hat x) + \lambda \sum_i |a^{h}_{i}|
+$$
+The second term take L1 regularization to penalize the absolute value of the vector of activations a in layer h for sample i,  which measures the sparsity. The regularization term can also take KL divergence, but we do not discuss it here.
+
+Unlike a standard autoencoder, an SAE also imposes a constraint on the encoding layer to produce sparse representations, which means that only a small subset of the neurons are activated at any given time. This is achieved by adding a sparsity penalty term to the loss function, which encourages the model to use only a small number of features to represent the input. The sparsity constraint in an SAE can help to reduce overfitting and improve generalization performance, as well as make the model more interpretable by identifying the most important features of the input data. SAEs have been used in a variety of applications, including image and speech recognition, anomaly detection, and natural language processing.
 
 ### 3.2. Denoising Autoencoder 
 
@@ -91,15 +101,25 @@ One advantage of using denoising autoencoders is that they can be trained in an 
 
 A contractive autoencoder adds an additional regularization term to the loss function called the "contractive penalty," which encourages the network to produce stable and robust representations of the input data. The contractive penalty measures the sensitivity of the encoding layer to small variations in the input data. By constraining the network to produce stable and robust representations, the CAE can learn features that are invariant to small variations in the input data, which can improve generalization performance and make the network more resistant to overfitting.
 
-Compared to DAEs, CAEs have a different regularization mechanism that encourages stable representations rather than removing “noise.” Compared to SAEs, the CAEs have a different regularization term that measures the sensitivity of the encoding layer to small variations in the input data.
+Compared to DAEs, CAEs have a different regularization mechanism that encourages stable representations rather than removing “noise.” Compared to SAEs, the CAEs have a different regularization term that measures the sensitivity of the encoding layer to small variations in the input data. The objective loss function, with the regularization term is given by:
+
+$$J_{CAE}(\theta) = \sum_{x \in D_n} (L(x,g(f(x))) + \lambda||J_f(x)||^2_F)$$
+Where the jacobian term is the sum of squares of all partial derivatives of the extracted features with respect to input dimension.
 
 ### 3.4. Variational Autoencoders
 
-Variational autoencoders use probabilistic generative models in addition to autoencoders.  The main difference between VAEs and traditional autoencoders is that VAEs learn a probabilistic distribution over the input data's latent space, allowing them to generate new data samples that are similar to the training data but not identical. This makes VAEs useful for tasks such as image and video generation, as well as data compression and feature extraction. The training process for VAEs involves optimizing two loss functions: a reconstruction loss that measures the difference between the input and the reconstructed output, and a regularization term that encourages the latent space to follow a predefined distribution. 
+Variational autoencoders use probabilistic generative models in addition to autoencoders[^12].  The main difference between VAEs and traditional autoencoders is that VAEs learn a probabilistic distribution over the input data's latent space, allowing them to generate new data samples that are similar to the training data but not identical. This makes VAEs useful for tasks such as image and video generation, as well as data compression and feature extraction. The training process for VAEs involves optimizing two loss functions: a reconstruction loss that measures the difference between the input and the reconstructed output, and a regularization term that encourages the latent space to follow a predefined distribution. 
 
 ## 4. Autoencoder versus PCA
 
-Autoencoder and principal component analysis (PCA) as two common methods for dimension reduction. As such, there are many strengths and weaknesses associated with each method. For example, autoencoders can capture non-linear relationships while PCA is limited to linear relationships. autoencoders for dimension reduction, such as faster computation times, reduced storage requirements, the ability to capture complex relationships, and the sensitivity to hyperparameters.
+Autoencoder and principal component analysis (PCA) as two common methods for dimension reduction. As such, there are many strengths and weaknesses associated with each method. For example, autoencoders can capture non-linear relationships while PCA is limited to linear relationships. autoencoders for dimension reduction, such as faster computation times, reduced storage requirements, the ability to capture complex relationships, and the sensitivity to hyperparameters. The nonlinearity of autoencoders vs PCA can be visualized with the following simulation:
+
+```{r, fig.width=6, fig.height=4, fig.cap="Autoencoder versus PCA"}
+knitr::include_graphics("figure/aeVesusPca.png")
+```
+
+We can see that when the feature space has some nonlinear behavior, the PCA does a poor job of reconstructing the noise, while the autoencoder reconstruction is much more accurate. 
+
 
 Comparison includes:
 
@@ -552,3 +572,5 @@ Please find our [github repository](https://github.com/zhejiadong/PHP2650FinalPr
 <https://towardsdatascience.com/6-applications-of-auto-encoders-every-data-scientist-should-know-dc703cbc892b>
 [^9]: Carreira-Perpinán, M. A. (1997). A review of dimension reduction techniques. Department of Computer Science. University of Sheffield. Tech. Rep. CS-96-09, 9, 1-69.
 [^10]: Bank, D., Koenigstein, N., & Giryes, R. (2020). Autoencoders. arXiv preprint arXiv:2003.05991.
+[^11]: Ng, A. (2011). Sparse autoencoder. CS294A Lecture notes, 72(2011), 1-19.
+[^12]: Kingma, D. P., & Welling, M. (2019). An introduction to variational autoencoders. Foundations and Trends® in Machine Learning, 12(4), 307-392.
