@@ -1,5 +1,5 @@
 ---
-title: "Autoencoders for Demonsion Reduction"
+title: "Autoencoders for Dimension Reduction"
 author: "Tabib Chowdhury & Zhejia Dong"
 date: ""
 header-includes:
