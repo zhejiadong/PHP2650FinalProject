@@ -13,5 +13,5 @@ In this project we review of autoencoder, a powerful dimension reduction techniq
 * `index.Rmd` and `index.html`: these two files are used to generate the github pages for public post
 * `application_soccer`: implementation of autoencoder on soccer data
 * `application_image`: implementation of autoencoder on facial image data
-* `\figure`: folder to save two 3-Deminsion figures for PCA and autoencoder in soccer data
+* `\figure`: folder to save figures for this post: 3-Deminsion figures for PCA and autoencoder in soccer data, and the other figures 
 * `\Data`: folder to save all used data in *csv* or *RData* format
